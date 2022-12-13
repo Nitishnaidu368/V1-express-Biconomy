@@ -26,23 +26,22 @@ class App extends Component {
   }
 
   async loadBlockchainData() {
-    const web3 = window.web3;
+    // const web3 = window.web3;
     const account = await window.ethereum.selectedAddress;
     this.setState({ account });
     const biconomy = new Biconomy(window.ethereum, {
       apiKey: "daRTTcGGc.f38fae3d-1c08-40d1-9d06-d9ef8d2bc132",
       debug: true,
-      contractAddresses: ["0xf02c627B3Ae533D488cb25F072e542ee7CCc1D10"],
+      contractAddresses: [addressPDNCGasless],
     });
-    // await biconomy.init();
-    window.web3 = new Web3(biconomy.provider);
+    const web3 = new Web3(biconomy.provider);
 
     const contractPNDCGasless = new web3.eth.Contract(
       PNDCGasless.abi,
       addressPDNCGasless
     );
     this.setState({ contractPNDCGasless });
-
+    await biconomy.init();
     biconomy.on("txHashGenerated", (data) => {
       console.log(data);
     });
@@ -134,7 +133,10 @@ class App extends Component {
 
     this.state.contractPNDCGasless.methods
       .gaslessmint(address, uri, royalties)
-      .send({ from: account })
+      .send("eth_sendTransaction", {
+        from: account,
+        signatureType: "EIP712_SIGN",
+      })
       .then((r) => {
         console.log("mint result:", r);
       });
